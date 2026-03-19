@@ -282,6 +282,15 @@ p  { line-height: 1.6; }
 
 .confirm-actions { display: flex; gap: .6rem; justify-content: flex-end; margin-top: .5rem; }
 
+.viewer-counter {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    min-width: 2.5rem;
+    text-align: center;
+}
+.viewer-nav { color: var(--gray-800); font-size: 1rem; padding: .3rem .6rem; }
+
 @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 

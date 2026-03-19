@@ -53,6 +53,9 @@
         <div class="modal-head">
             <h2 id="viewTitle" class="truncate">File Viewer</h2>
             <div class="modal-head-actions">
+                <button id="viewPrevBtn" class="btn btn-ghost btn-sm viewer-nav" onclick="App.navigateViewer(-1)" aria-label="Previous">&#8592;</button>
+                <span id="viewCounter" class="viewer-counter hidden"></span>
+                <button id="viewNextBtn" class="btn btn-ghost btn-sm viewer-nav" onclick="App.navigateViewer(1)" aria-label="Next">&#8594;</button>
                 <a id="viewDownloadBtn" class="btn btn-outline btn-sm" href="#" download>Download</a>
                 <button class="icon-btn" aria-label="Close" onclick="App.closeModal('viewModal')">&#10005;</button>
             </div>

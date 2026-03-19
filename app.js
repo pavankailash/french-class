@@ -324,17 +324,16 @@ function renderFiles(date) {
     }
     empty.classList.add('hidden');
 
-    files.forEach(file => {
-        const card = buildFileCard(file, date);
+    files.forEach((file, idx) => {
+        const card = buildFileCard(file, date, idx, files);
         grid.appendChild(card);
     });
 }
 
-function buildFileCard(file, date) {
+function buildFileCard(file, date, index, allFiles) {
     const path  = `${CFG.base}/${date}/${file.name}`;
     const url   = rawUrl(path);
     const isImg = isImage(file.name);
-    const isPd  = isPdf(file.name);
 
     const card = document.createElement('div');
     card.className = 'file-card';
@@ -361,7 +360,7 @@ function buildFileCard(file, date) {
     const viewBtn = document.createElement('button');
     viewBtn.className = 'btn btn-outline-dark btn-sm';
     viewBtn.textContent = 'View';
-    viewBtn.onclick = () => openFileViewer(url, file.name, isPd, isImg);
+    viewBtn.onclick = () => openFileViewer(allFiles, index);
     actions.appendChild(viewBtn);
 
     // Download button
@@ -386,13 +385,41 @@ function buildFileCard(file, date) {
 }
 
 /* ============================================================
-   FILE VIEWER
+   FILE VIEWER  (with carousel navigation)
    ============================================================ */
-function openFileViewer(url, name, isPd, isImg) {
-    document.getElementById('viewTitle').textContent = name;
+let _viewerFiles = [];
+let _viewerIndex = 0;
+
+function openFileViewer(files, index) {
+    _viewerFiles = files;
+    _viewerIndex = index;
+    _renderViewer();
+    openModal('viewModal');
+}
+
+function _renderViewer() {
+    const file = _viewerFiles[_viewerIndex];
+    const path  = `${CFG.base}/${state.currentDay}/${file.name}`;
+    const url   = rawUrl(path);
+    const isPd  = isPdf(file.name);
+    const isImg = isImage(file.name);
+
+    document.getElementById('viewTitle').textContent = file.name;
     const dlBtn = document.getElementById('viewDownloadBtn');
     dlBtn.href     = url;
-    dlBtn.download = name;
+    dlBtn.download = file.name;
+
+    // Counter + nav buttons
+    const multi = _viewerFiles.length > 1;
+    document.getElementById('viewPrevBtn').classList.toggle('hidden', !multi);
+    document.getElementById('viewNextBtn').classList.toggle('hidden', !multi);
+    const counter = document.getElementById('viewCounter');
+    if (multi) {
+        counter.textContent = `${_viewerIndex + 1} / ${_viewerFiles.length}`;
+        counter.classList.remove('hidden');
+    } else {
+        counter.classList.add('hidden');
+    }
 
     const body = document.getElementById('viewerContent');
     body.innerHTML = '';
@@ -400,20 +427,23 @@ function openFileViewer(url, name, isPd, isImg) {
     if (isPd) {
         const iframe = document.createElement('iframe');
         iframe.src = url;
-        iframe.title = name;
+        iframe.title = file.name;
         body.appendChild(iframe);
     } else if (isImg) {
         const img = document.createElement('img');
         img.src = url;
-        img.alt = name;
+        img.alt = file.name;
         body.appendChild(img);
     } else {
         body.innerHTML = `<div style="padding:2rem;text-align:center;color:#fff">
             Preview not available. <a href="${esc(url)}" download style="color:#93c5fd">Download file</a>
         </div>`;
     }
+}
 
-    openModal('viewModal');
+function navigateViewer(delta) {
+    _viewerIndex = (_viewerIndex + delta + _viewerFiles.length) % _viewerFiles.length;
+    _renderViewer();
 }
 
 /* ============================================================
@@ -616,6 +646,15 @@ function esc(str) {
 }
 
 /* ============================================================
+   KEYBOARD NAVIGATION FOR VIEWER
+   ============================================================ */
+document.addEventListener('keydown', e => {
+    if (document.getElementById('viewModal').classList.contains('hidden')) return;
+    if (e.key === 'ArrowLeft')  navigateViewer(-1);
+    if (e.key === 'ArrowRight') navigateViewer(1);
+});
+
+/* ============================================================
    PUBLIC API  (called from HTML via onclick)
    ============================================================ */
 window.App = {
@@ -632,6 +671,7 @@ window.App = {
     onDragLeave,
     onDrop,
     handleFileInput,
+    navigateViewer,
 };
 
 /* ============================================================
