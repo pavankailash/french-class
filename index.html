@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>French Class Worksheets</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+    <div class="header-inner">
+        <div class="logo">
+            <div class="flag-bar">
+                <span class="flag-blue"></span>
+                <span class="flag-white"></span>
+                <span class="flag-red"></span>
+            </div>
+            <span class="logo-text">French Class</span>
+        </div>
+        <div class="header-actions">
+            <span id="adminBadge" class="admin-badge hidden">Admin</span>
+            <button id="adminBtn" class="btn btn-outline" onclick="App.openLoginModal()">Admin Login</button>
+            <button id="logoutBtn" class="btn btn-ghost hidden" onclick="App.logout()">Log out</button>
+        </div>
+    </div>
+</header>
+
+<!-- ===== LOGIN MODAL ===== -->
+<div id="loginModal" class="modal-backdrop hidden" onclick="App.backdropClose(event,'loginModal')">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+        <div class="modal-head">
+            <h2 id="loginTitle">Admin Login</h2>
+            <button class="icon-btn" aria-label="Close" onclick="App.closeModal('loginModal')">&#10005;</button>
+        </div>
+        <div class="modal-body">
+            <p class="muted">Enter a GitHub Personal Access Token with <strong>repo</strong> scope to manage worksheets.</p>
+            <label class="field-label" for="patInput">Personal Access Token</label>
+            <input id="patInput" class="text-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                   onkeydown="if(event.key==='Enter') App.login()" />
+            <div id="loginError" class="alert alert-error hidden"></div>
+            <button class="btn btn-primary btn-full" onclick="App.login()">
+                <span id="loginBtnText">Sign in</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== FILE VIEWER MODAL ===== -->
+<div id="viewModal" class="modal-backdrop hidden" onclick="App.backdropClose(event,'viewModal')">
+    <div class="modal-box modal-xl" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+        <div class="modal-head">
+            <h2 id="viewTitle" class="truncate">File Viewer</h2>
+            <div class="modal-head-actions">
+                <a id="viewDownloadBtn" class="btn btn-outline btn-sm" href="#" download>Download</a>
+                <button class="icon-btn" aria-label="Close" onclick="App.closeModal('viewModal')">&#10005;</button>
+            </div>
+        </div>
+        <div class="modal-body modal-viewer" id="viewerContent"></div>
+    </div>
+</div>
+
+<!-- ===== CONFIRM DELETE MODAL ===== -->
+<div id="confirmModal" class="modal-backdrop hidden" onclick="App.backdropClose(event,'confirmModal')">
+    <div class="modal-box modal-sm" role="dialog" aria-modal="true">
+        <div class="modal-head">
+            <h2>Delete file?</h2>
+            <button class="icon-btn" onclick="App.closeModal('confirmModal')">&#10005;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="confirmFileName"></strong>? This cannot be undone.</p>
+            <div class="confirm-actions">
+                <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                <button class="btn btn-ghost" onclick="App.closeModal('confirmModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== CONFIG ERROR BANNER ===== -->
+<div id="configBanner" class="config-banner hidden">
+    <strong>Setup required:</strong> Edit <code>config.js</code> and set your GitHub username and repository name.
+</div>
+
+<!-- ===== APP LAYOUT ===== -->
+<div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-head">
+            <span class="sidebar-title">Class Days</span>
+            <button id="addDayBtn" class="btn btn-primary btn-sm hidden" onclick="App.showAddDayForm()">+ New Day</button>
+        </div>
+
+        <!-- Add-day inline form -->
+        <div id="addDayForm" class="add-day-form hidden">
+            <input type="date" id="newDayDate" class="text-input" />
+            <div class="add-day-actions">
+                <button class="btn btn-primary btn-sm" onclick="App.confirmAddDay()">Add</button>
+                <button class="btn btn-ghost btn-sm" onclick="App.hideAddDayForm()">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Days list -->
+        <nav id="daysList" class="days-list" aria-label="Class days"></nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+        <!-- Welcome screen (no day selected) -->
+        <div id="welcomeScreen" class="center-screen">
+            <div class="welcome-icon">&#128218;</div>
+            <h2>Select a Class Day</h2>
+            <p class="muted">Choose a date from the sidebar to view its worksheets.</p>
+        </div>
+
+        <!-- Day view -->
+        <div id="dayView" class="day-view hidden">
+            <div class="day-header">
+                <div>
+                    <h2 id="dayTitle" class="day-title"></h2>
+                    <p id="daySubtitle" class="muted day-subtitle"></p>
+                </div>
+                <!-- Delete day (admin) -->
+                <button id="deleteDayBtn" class="btn btn-danger-outline btn-sm hidden" onclick="App.confirmDeleteDay()">Delete Day</button>
+            </div>
+
+            <!-- Upload zone (admin only) -->
+            <div id="uploadZone" class="upload-zone hidden" id="uploadZone">
+                <div class="upload-inner" id="uploadInner"
+                     ondragover="App.onDragOver(event)"
+                     ondragleave="App.onDragLeave(event)"
+                     ondrop="App.onDrop(event)"
+                     onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">&#128228;</div>
+                    <p class="upload-label">Click or drag &amp; drop files here</p>
+                    <p class="muted upload-hint">PDF, JPG, PNG, GIF, WebP &mdash; max 25 MB each</p>
+                </div>
+                <input type="file" id="fileInput" class="sr-only" multiple
+                       accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
+                       onchange="App.handleFileInput(this.files)" />
+            </div>
+
+            <!-- Upload progress list -->
+            <ul id="uploadQueue" class="upload-queue hidden"></ul>
+
+            <!-- Files grid -->
+            <div id="fileGrid" class="file-grid"></div>
+
+            <!-- Empty state -->
+            <div id="emptyState" class="center-screen hidden">
+                <div class="welcome-icon">&#128196;</div>
+                <p class="muted">No worksheets uploaded for this day yet.</p>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
