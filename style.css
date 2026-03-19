@@ -451,8 +451,26 @@ p  { line-height: 1.6; }
     padding: 1rem 1.25rem;
     gap: 1rem;
 }
-.day-title    { font-size: 1.15rem; font-weight: 700; }
-.day-subtitle { margin-top: 2px; }
+.day-header-content { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+.day-title    { font-size: 1rem; font-weight: 500; color: var(--gray-600); }
+
+.topic-input {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    padding: 0;
+    width: 100%;
+    outline: none;
+    transition: border-color .15s;
+}
+.topic-input:not([readonly]):hover,
+.topic-input:focus {
+    border-bottom-color: var(--blue);
+}
+.topic-input[readonly] { cursor: default; }
 
 /* ============================================================
    UPLOAD ZONE

@@ -122,9 +122,10 @@
         <!-- Day view -->
         <div id="dayView" class="day-view hidden">
             <div class="day-header">
-                <div>
+                <div class="day-header-content">
+                    <input id="topicInput" class="topic-input" type="text" placeholder="Add a topic…"
+                           onblur="App.saveTopic()" onkeydown="if(event.key==='Enter') this.blur()" />
                     <h2 id="dayTitle" class="day-title"></h2>
-                    <p id="daySubtitle" class="muted day-subtitle"></p>
                 </div>
                 <!-- Delete day (admin) -->
                 <button id="deleteDayBtn" class="btn btn-danger-outline btn-sm hidden" onclick="App.confirmDeleteDay()">Delete Day</button>

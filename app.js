@@ -31,6 +31,7 @@ const state = {
     currentDay: null,
     days:       [],          // string[] — directory names, sorted desc
     fileCache:  {},          // { [date]: GHFileItem[] }
+    topicCache: {},          // { [date]: { text: string, sha: string|null } }
 };
 
 /* ============================================================
@@ -224,6 +225,55 @@ function applyAdminUI() {
     document.getElementById('addDayBtn').classList.toggle('hidden', !isAdmin);
     document.getElementById('uploadZone').classList.toggle('hidden', !isAdmin);
     document.getElementById('deleteDayBtn').classList.toggle('hidden', !isAdmin || !state.currentDay);
+
+    const topicInput = document.getElementById('topicInput');
+    topicInput.readOnly = !isAdmin;
+    topicInput.placeholder = isAdmin ? 'Add a topic…' : '';
+}
+
+/* ============================================================
+   TOPIC
+   ============================================================ */
+async function loadTopic(date) {
+    const input = document.getElementById('topicInput');
+    input.value = '';
+
+    if (!state.topicCache[date]) {
+        try {
+            const data = await ghGetContents(`${CFG.base}/${date}/.topic`);
+            state.topicCache[date] = data
+                ? { text: atob(data.content.replace(/\n/g, '')), sha: data.sha }
+                : { text: '', sha: null };
+        } catch {
+            state.topicCache[date] = { text: '', sha: null };
+        }
+    }
+
+    input.value = state.topicCache[date].text;
+    input.classList.toggle('hidden', !state.isAdmin && !input.value);
+}
+
+async function saveTopic() {
+    if (!state.isAdmin || !state.currentDay) return;
+    const date  = state.currentDay;
+    const input = document.getElementById('topicInput');
+    const text  = input.value.trim();
+    const cache = state.topicCache[date] || { text: '', sha: null };
+
+    if (text === cache.text) return;   // nothing changed
+
+    try {
+        const result = await ghPutFile(
+            `${CFG.base}/${date}/.topic`,
+            btoa(String.fromCharCode(...new TextEncoder().encode(text))),
+            `Update topic for ${date}`,
+            cache.sha
+        );
+        state.topicCache[date] = { text, sha: result.content.sha };
+        input.value = text;
+    } catch (err) {
+        toast(err.message, 'error');
+    }
 }
 
 /* ============================================================
@@ -286,13 +336,12 @@ async function selectDay(date) {
     document.getElementById('welcomeScreen').classList.add('hidden');
     document.getElementById('dayView').classList.remove('hidden');
     document.getElementById('dayTitle').textContent = fmtDateLong(date);
-    document.getElementById('daySubtitle').textContent = date;
     document.getElementById('deleteDayBtn').classList.toggle('hidden', !state.isAdmin);
     document.getElementById('uploadZone').classList.toggle('hidden', !state.isAdmin);
     document.getElementById('fileGrid').innerHTML = '<div class="sidebar-placeholder">Loading files…</div>';
     document.getElementById('emptyState').classList.add('hidden');
 
-    await loadFiles(date);
+    await Promise.all([loadFiles(date), loadTopic(date)]);
 }
 
 /* ============================================================
@@ -302,7 +351,7 @@ async function loadFiles(date) {
     if (!state.fileCache[date]) {
         try {
             const data = await ghGetContents(`${CFG.base}/${date}`);
-            state.fileCache[date] = data ? data.filter(i => i.type === 'file') : [];
+            state.fileCache[date] = data ? data.filter(i => i.type === 'file' && i.name !== '.topic') : [];
         } catch (err) {
             toast(err.message, 'error');
             state.fileCache[date] = [];
@@ -523,7 +572,7 @@ function onDragOver(e) {
     e.preventDefault();
     document.getElementById('uploadInner').classList.add('drag-over');
 }
-function onDragLeave(e) {
+function onDragLeave(_e) {
     document.getElementById('uploadInner').classList.remove('drag-over');
 }
 function onDrop(e) {
@@ -672,6 +721,7 @@ window.App = {
     onDrop,
     handleFileInput,
     navigateViewer,
+    saveTopic,
 };
 
 /* ============================================================
